@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '9.1.0'
+}
+
+group = 'net.i_no_am.keybinds'
+version = '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.github.kwhat:jnativehook:2.2.2'
+    implementation 'com.google.code.gson:gson:2.11.0'
+}
+
+application {
+    mainClass = 'net.i_no_am.keybinds.KeybindsShortcut'
+}
+
+shadowJar {
+    archiveBaseName.set('KeybindsShortcut')
+    archiveClassifier.set('build')
+    archiveVersion.set('0.1')
+}

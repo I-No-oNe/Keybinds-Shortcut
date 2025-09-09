@@ -1,0 +1,32 @@
+{
+  "keybinds": [
+    {
+      "keys": ["CTRL", "ALT", "F"],
+      "app": "firefox"
+    },
+    {
+      "keys": ["CTRL", "SHIFT", "N"],
+      "app": "notepad"
+    },
+    {
+      "keys": ["ALT", "Q"],
+      "app": "calc"
+    },
+    {
+      "keys": ["CTRL", "ALT", "T"],
+      "app": "terminal"
+    },
+    {
+      "keys": ["CTRL", "SHIFT", "C"],
+      "app": "chatgpt"
+    },
+    {
+      "keys": ["CTRL", "ALT", "G"],
+        "app": "github desktop"
+    },
+    {
+      "keys": ["CTRL", "SHIFT", "S"],
+      "app": "solidworks"
+    }
+  ]
+}
