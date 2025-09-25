@@ -25,7 +25,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # Build fat JAR with all libraries
+      # Build fat JAR with Shadow plugin
       - name: Build fat JAR
         run: ./gradlew shadowJar
 
@@ -41,14 +41,13 @@ jobs:
             echo "version=${BASH_REMATCH[1]}" >> $GITHUB_ENV
             echo "Found version: ${BASH_REMATCH[1]}"
           else
-            echo "No version found, skipping release."
-            echo "version=" >> $GITHUB_ENV
+            echo "version=latest" >> $GITHUB_ENV
+            echo "No version found, defaulting to 'latest'"
           fi
 
-      # Auto release only if version was found
-      - name: Latest Release
-        if: env.version != ''
-        uses: "0xDylan/action-auto-releases-n20@v1.1"
+      # Create GitHub Release (versioned or latest)
+      - name: Release
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: ${{ env.version }}
