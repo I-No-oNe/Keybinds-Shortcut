@@ -32,8 +32,8 @@ jobs:
       - name: Rename jar file
         run: |
           cd build/libs
-          for f in *-all.jar; do
-            newname="${f/-all/}"     # strip '-all'
+          for f in *-build.jar; do
+            newname="${f/-build/}"     # strip '-all'
             mv "$f" "$newname"
           done
           ls -lh
