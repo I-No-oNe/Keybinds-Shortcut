@@ -16,7 +16,10 @@ jobs:
           java-version: "21"
           distribution: "temurin"
 
-      - name: Build with Gradle
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build with Gradle (ShadowJar)
         run: ./gradlew shadowJar --no-daemon
 
       - name: Rename jar file
