@@ -21,7 +21,8 @@ application {
 }
 
 shadowJar {
+    archiveClassifier.set('')
     archiveBaseName.set('KeybindsShortcut')
     archiveClassifier.set('build')
-    archiveVersion.set('0.1')
+    archiveVersion.set('0.2')
 }
