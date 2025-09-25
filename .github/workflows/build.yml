@@ -32,8 +32,9 @@ jobs:
       - name: Rename jar file
         run: |
           cd build/libs
-          for f in *-build.jar; do
-            mv "$f" "${f/-build/}.jar"
+          for f in *-all.jar; do
+            newname="${f/-all/}"     # strip '-all'
+            mv "$f" "$newname"
           done
           ls -lh
 
@@ -43,6 +44,7 @@ jobs:
           name: "Latest Release"
           tag_name: "latest"
           files: build/libs/*.jar
+          overwrite: true            # overwrite existing asset with same name
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
