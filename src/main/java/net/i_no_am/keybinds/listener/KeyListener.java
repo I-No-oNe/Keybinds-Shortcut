@@ -1,10 +1,12 @@
-package net.i_no_am.keybinds.util;
+package net.i_no_am.keybinds.listener;
 
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 import net.i_no_am.keybinds.config.Config;
 import net.i_no_am.keybinds.config.Keybind;
+import net.i_no_am.keybinds.util.KeyBindUtils;
+import net.i_no_am.keybinds.util.OsUtils;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -21,6 +23,7 @@ public class KeyListener implements NativeKeyListener {
 
     private KeyListener(Path configPath) {
         this.config = new Config(configPath);
+        config.onChange(config::reload);
     }
 
     public static void register(Path configPath) {

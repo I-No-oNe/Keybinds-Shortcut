@@ -1,7 +1,7 @@
 {
   "keybinds": [
     {
-      "keys": ["CTRL", "ALT", "F"],
+      "keys": ["CTRL", "SHIFT", "F"],
       "app": "firefox"
     },
     {
@@ -9,11 +9,11 @@
       "app": "notepad"
     },
     {
-      "keys": ["ALT", "Q"],
+      "keys": ["CTRL", "SHIFT", "Q"],
       "app": "calc"
     },
     {
-      "keys": ["CTRL", "ALT", "T"],
+      "keys": ["CTRL", "SHIFT", "T"],
       "app": "terminal"
     },
     {
@@ -21,12 +21,16 @@
       "app": "chatgpt"
     },
     {
-      "keys": ["CTRL", "ALT", "G"],
-        "app": "github desktop"
+      "keys": ["CTRL", "SHIFT", "G"],
+      "app": "github desktop"
     },
     {
       "keys": ["CTRL", "SHIFT", "S"],
       "app": "solidworks"
+    },
+    {
+      "keys": ["CTRL", "SHIFT", "P"],
+      "app": "prism-launcher"
     }
   ]
 }

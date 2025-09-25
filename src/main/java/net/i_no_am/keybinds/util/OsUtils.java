@@ -1,100 +1,75 @@
 package net.i_no_am.keybinds.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import static net.i_no_am.keybinds.KeybindsShortcut.error;
 
 public class OsUtils {
 
     public enum OperatingSystem {
-        WINDOWS, MACOS, LINUX, UNKNOWN
-    }
+        WINDOWS("win"), MACOS("mac", "darwin"), LINUX("nix", "nux", "aix"), UNKNOWN;
 
-    private static final OperatingSystem CURRENT_OS = detectOs();
+        private final String[] aliases;
 
-    private static OperatingSystem detectOs() {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            return OperatingSystem.WINDOWS;
-        } else if (os.contains("mac") || os.contains("darwin")) {
-            return OperatingSystem.MACOS;
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return OperatingSystem.LINUX;
-        } else {
-            return OperatingSystem.UNKNOWN;
+        OperatingSystem(String... aliases) {
+            this.aliases = aliases;
+        }
+
+        public static OperatingSystem detectOs() {
+            String os = System.getProperty("os.name").toLowerCase();
+            return Arrays.stream(values()).filter(osType -> Arrays.stream(osType.aliases).anyMatch(os::contains)).findFirst().orElse(UNKNOWN);
         }
     }
 
-    private static ProcessBuilder createProcessBuilder(String appName) {
-        return switch (CURRENT_OS) {
-            case WINDOWS -> new ProcessBuilder("cmd", "/c", "start", "", appName);
-            case MACOS -> new ProcessBuilder("open", appName);
-            case LINUX -> new ProcessBuilder("xdg-open", appName);
-            default -> new ProcessBuilder(appName);
-        };
+    private static final OperatingSystem CURRENT_OS = OperatingSystem.detectOs();
+
+    private static String executeCommand(String... command) {
+        try {
+            Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+
+            if (!process.waitFor(5, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return null;
+            }
+
+            return new String(process.getInputStream().readAllBytes()).trim();
+        } catch (IOException | InterruptedException e) {
+            return null;
+        }
     }
 
     private static String findApp(String appName) {
+        String result = switch (CURRENT_OS) {
+            case WINDOWS -> {
+                String output = executeCommand("powershell", "-command", "Get-StartApps | Where-Object {$_.Name -like '*" + appName + "*'} " + "| Select-Object -First 1 -ExpandProperty AppID");
+                yield output != null && !output.isEmpty() ? "shell:AppsFolder\\" + output : null;
+            }
+            case MACOS -> executeCommand("mdfind", "kMDItemKind==Application && kMDItemDisplayName=='" + appName + "'");
+            case LINUX -> executeCommand("which", appName);
+            default -> null;
+        };
+
+        return result != null && !result.isEmpty() ? result.lines().findFirst().orElse(appName) : appName;
+    }
+
+    private static ProcessBuilder createProcessBuilder(String appPath) {
         return switch (CURRENT_OS) {
-            case WINDOWS -> findWindow(appName);
-            case MACOS -> findMac(appName);
-            case LINUX -> findLinux(appName);
-            default -> appName;
+            case WINDOWS -> new ProcessBuilder("cmd", "/c", "start", "", appPath);
+            case MACOS -> new ProcessBuilder("open", appPath);
+            case LINUX -> new ProcessBuilder("xdg-open", appPath);
+            default -> new ProcessBuilder(appPath);
         };
     }
 
-
-    private static String findWindow(String appName) {
-        try {
-            Process process = new ProcessBuilder(
-                    "powershell", "-command",
-                    "Get-StartApps | Where-Object {$_.Name -like '*" + appName + "*'} " +
-                            "| Select-Object -First 1 -ExpandProperty AppID"
-            ).start();
-
-            List<String> output = readOutput(process);
-            return output.isEmpty() ? appName : "shell:AppsFolder\\" + output.getFirst();
-        } catch (IOException e) {
-            return appName;
-        }
-    }
-
-    private static String findMac(String appName) {
-        try {
-            // Use mdfind to locate .app bundles by name
-            Process process = new ProcessBuilder(
-                    "mdfind", "kMDItemKind==Application && kMDItemDisplayName=='" + appName + "'"
-            ).start();
-
-            List<String> output = readOutput(process);
-            return output.isEmpty() ? appName : output.getFirst();
-        } catch (IOException e) {
-            return appName;
-        }
-    }
-
-    private static String findLinux(String appName) {
-        try {
-            Process process = new ProcessBuilder("which", appName).start();
-            List<String> output = readOutput(process);
-            return output.isEmpty() ? appName : output.getFirst();
-        } catch (IOException e) {
-            return appName;
-        }
-    }
-
-    private static List<String> readOutput(Process process) throws IOException {
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null)
-                lines.add(line.trim());
-        }
-        return lines;
+    public static String getDefaultApp() {
+        return switch (CURRENT_OS) {
+            case WINDOWS -> "explorer";
+            case MACOS -> "Finder";
+            case LINUX -> "xdg-open";
+            default -> "notepad";
+        };
     }
 
     public static boolean open(String appName) {

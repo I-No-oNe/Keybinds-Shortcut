@@ -1,33 +1,22 @@
 package net.i_no_am.keybinds;
 
-import net.i_no_am.keybinds.util.KeyListener;
+import net.i_no_am.keybinds.config.Config;
+import net.i_no_am.keybinds.listener.KeyListener;
 
-import java.nio.file.Path;
-
+import java.nio.file.Paths;
 public class KeybindsShortcut {
 
-    private static KeybindsShortcut instance;
-
     public static void main(String[] args) {
-        KeybindsShortcut app = getInstance();
         try {
-            app.load(args);
-            print("Successfully started KeybindsShortcut%n");
+            var path = Paths.get(System.getProperty("user.home"), "Documents", "shortcuts", "keys.json");
+            KeyListener.register(path);
+            print("""
+                    Successfully started KeybindsShortcut%n
+                     find config on %s
+                     current values: %s""", path, Config.getKeybinds());
         } catch (Exception e) {
             error("Error: %s%n", e.getMessage());
         }
-    }
-
-    private void load(String[] args) {
-        Path configPath = (args.length > 0) ? Path.of(args[0]) : Path.of("keybinds.json");
-        KeyListener.register(configPath);
-    }
-
-    public static KeybindsShortcut getInstance() {
-        if (instance == null) {
-            instance = new KeybindsShortcut();
-        }
-        return instance;
     }
 
     public static void print(String message, Object... args) {
@@ -35,7 +24,7 @@ public class KeybindsShortcut {
     }
 
     public static void error(String message, Object... args) {
-        System.err.printf(message, args);
+        System.err.printf("[ERROR] " + message, args);
         System.exit(1);
     }
 }

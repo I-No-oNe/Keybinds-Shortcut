@@ -2,60 +2,49 @@ package net.i_no_am.keybinds.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.i_no_am.keybinds.util.OsUtils;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static net.i_no_am.keybinds.KeybindsShortcut.error;
 
 public class Config {
-
     private final Path path;
-    private List<Keybind> keybinds;
-    private final Gson gson;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    public static List<Keybind> keybinds = new ArrayList<>();
 
     public Config(Path path) {
         this.path = path;
-        this.gson = new GsonBuilder().setPrettyPrinting().create();
-        this.keybinds = new ArrayList<>();
         load();
+        firstInit();
     }
 
     public void load() {
-        var file = path.toFile();
-        if (!file.exists()) createFrom(file);
-        try (FileReader reader = new FileReader(file)) {
-            Keybind.ConfigData data = gson.fromJson(reader, Keybind.ConfigData.class);
-            if (data != null && data.getKeybinds() != null) {
-                keybinds = data.getKeybinds();
-            } else {
-                keybinds = new ArrayList<>();
+        try {
+            if (!Files.exists(path)) {
+                Files.createDirectories(path.getParent());
+                Files.writeString(path, "{}");
             }
+
+            String content = Files.readString(path);
+            Keybind.ConfigData data = gson.fromJson(content, Keybind.ConfigData.class);
+            keybinds = (data != null && data.getKeybinds() != null) ? data.getKeybinds() : new ArrayList<>();
         } catch (IOException e) {
             error("Failed to load keybinds: " + e.getMessage());
-        }
-    }
-
-    private void createFrom(File file) {
-        file.getParentFile().mkdirs();
-        try (FileWriter writer = new FileWriter(file)) {
-            writer.write("{}");
-        } catch (IOException e) {
-            error("Failed to create keybinds file: " + e.getMessage());
+            keybinds = new ArrayList<>();
         }
     }
 
     public boolean save() {
-        try (FileWriter writer = new FileWriter(path.toFile())) {
+        try {
             Keybind.ConfigData data = new Keybind.ConfigData();
             data.setKeybinds(keybinds);
-            gson.toJson(data, writer);
+            Files.writeString(path, gson.toJson(data));
             return true;
         } catch (IOException e) {
             error("Failed to save keybinds: " + e.getMessage());
@@ -69,26 +58,59 @@ public class Config {
     }
 
     public boolean update(List<String> keys, String application) {
-        for (Keybind k : keybinds) {
-            if (k.getKeys().equals(keys)) {
-                k.setApp(application);
-                return save();
-            }
-        }
-        return false;
+        return keybinds.stream()
+                .filter(k -> k.getKeys().equals(keys))
+                .findFirst()
+                .map(k -> {
+                    k.setApp(application);
+                    return save();
+                })
+                .orElse(false);
     }
 
     public boolean remove(List<String> keys) {
-        boolean removed = keybinds.removeIf(k -> k.getKeys().equals(keys));
-        if (removed) return save();
-        return false;
+        return keybinds.removeIf(k -> k.getKeys().equals(keys)) && save();
     }
 
-    public List<Keybind> getKeybinds() {
+    public void firstInit() {
+        if (keybinds.isEmpty()) {
+            Keybind defaultKeybind = new Keybind(List.of("CTRL", "ALT", "I"), OsUtils.getDefaultApp());
+            keybinds.add(defaultKeybind);
+            save();
+        }
+    }
+
+    public static List<Keybind> getKeybinds() {
         return Collections.unmodifiableList(keybinds);
     }
 
     public void reload() {
         load();
+    }
+
+    public void onChange(Runnable callback) {
+        try {
+            WatchService watcher = FileSystems.getDefault().newWatchService();
+            path.getParent().register(watcher, ENTRY_MODIFY);
+
+            Thread.ofVirtual().start(() -> {
+                try {
+                    while (!Thread.currentThread().isInterrupted()) {
+                        WatchKey key = watcher.take();
+                        key.pollEvents().stream()
+                                .filter(event -> event.kind() == ENTRY_MODIFY)
+                                .map(event -> (Path) event.context())
+                                .filter(changed -> changed.equals(path.getFileName()))
+                                .findAny()
+                                .ifPresent(p -> callback.run());
+                        if (!key.reset()) break;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        } catch (IOException e) {
+            error("Failed to setup file watcher: " + e.getMessage());
+        }
     }
 }

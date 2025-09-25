@@ -3,6 +3,7 @@ package net.i_no_am.keybinds.config;
 import java.util.List;
 
 public class Keybind {
+
     private List<String> keys;
     private String app;
 
@@ -38,5 +39,12 @@ public class Keybind {
         public void setKeybinds(List<Keybind> keybinds) {
             this.keybinds = keybinds;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "keys =" + keys +
+                ", app='" + app + '\'' +
+                '}';
     }
 }

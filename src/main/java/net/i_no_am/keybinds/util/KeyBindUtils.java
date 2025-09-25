@@ -10,9 +10,7 @@ import static net.i_no_am.keybinds.KeybindsShortcut.error;
 public class KeyBindUtils {
 
     public static int[] getKeycodes(String keys) {
-        String cleanKeys = keys.replaceAll("[\\[\\]]", "");
-        String[] parts = cleanKeys.split(",");
-
+        String[] parts = keys.replaceAll("[\\[\\]]", "").split(",");
         return Arrays.stream(parts)
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -27,8 +25,6 @@ public class KeyBindUtils {
             case "CTRL" -> "CONTROL";
             case "ESC" -> "ESCAPE";
             case "WIN" -> "WINDOWS";
-            case "ALT" -> "ALT";
-            case "SHIFT" -> "SHIFT";
             default -> normalized;
         };
 
